@@ -1,0 +1,15 @@
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\bin\Debug\net8.0\zad8.exe
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\bin\Debug\net8.0\zad8.deps.json
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\bin\Debug\net8.0\zad8.runtimeconfig.json
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\bin\Debug\net8.0\zad8.dll
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\bin\Debug\net8.0\zad8.pdb
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.AssemblyInfoInputs.cache
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.AssemblyInfo.cs
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.csproj.CoreCompileInputs.cache
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.sourcelink.json
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.dll
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\refint\zad8.dll
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.pdb
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\zad8.genruntimeconfig.cache
+C:\Users\Win 10\Desktop\sistemsko_prog\zad8\zad8\obj\Debug\net8.0\ref\zad8.dll

@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\Win 10\\Desktop\\sistemsko_prog\\zad8\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|c:\\users\\win 10\\desktop\\sistemsko_prog\\zad8\\zad8\\http\\server.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|solutionrelative:zad8\\http\\server.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|c:\\users\\win 10\\desktop\\sistemsko_prog\\zad8\\zad8\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|solutionrelative:zad8\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|c:\\users\\win 10\\desktop\\sistemsko_prog\\zad8\\zad8\\http\\server.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|solutionrelative:zad8\\http\\server.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|c:\\users\\win 10\\desktop\\sistemsko_prog\\zad8\\zad8\\logger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE096DBC-B0C6-493E-9078-B732AB60D3BF}|zad8\\zad8.csproj|solutionrelative:zad8\\logger.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,20 +30,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
+              "Title": "Logger.cs",
+              "DocumentMoniker": "C:\\Users\\Win 10\\Desktop\\sistemsko_prog\\zad8\\zad8\\Logger.cs",
+              "RelativeDocumentMoniker": "zad8\\Logger.cs",
+              "ToolTip": "C:\\Users\\Win 10\\Desktop\\sistemsko_prog\\zad8\\zad8\\Logger.cs",
+              "RelativeToolTip": "zad8\\Logger.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-03T21:16:36.557Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
               "Title": "server.cs",
               "DocumentMoniker": "C:\\Users\\Win 10\\Desktop\\sistemsko_prog\\zad8\\zad8\\http\\server.cs",
               "RelativeDocumentMoniker": "zad8\\http\\server.cs",
               "ToolTip": "C:\\Users\\Win 10\\Desktop\\sistemsko_prog\\zad8\\zad8\\http\\server.cs",
               "RelativeToolTip": "zad8\\http\\server.cs",
-              "ViewState": "AgIAAC4AAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAALYAAAAAAAAAAAAgwMUAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-03T18:52:28.563Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Win 10\\Desktop\\sistemsko_prog\\zad8\\zad8\\Program.cs",
               "RelativeDocumentMoniker": "zad8\\Program.cs",
