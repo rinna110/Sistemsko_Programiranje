@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 public class HttpServer
 {
 	private const int MAX_CACHE_SIZE = 10;
+	private readonly string rootFolder = "root";
 
 	//zahtev klijenata
 	private Queue<Socket> requestQueue=new Queue<Socket>();
@@ -32,8 +33,8 @@ public class HttpServer
 
 		for(int i=0; i<br_zahteva; i++)
 		{
-			Thread nit = new Thread(Worker);
-			nit.Start();
+			Thread t = new Thread(Worker);
+			t.Start();
 		}
 	}
 	
@@ -53,10 +54,10 @@ public class HttpServer
 		}
 	}
 
-	private bool check_path(string path)
+	/*private bool check_path(string path)
 	{
 		return File.Exists(path) && !Directory.Exists(path);
-	}
+	}*/
 
 	private void EnsureCacheLimit()
 	{
@@ -100,12 +101,19 @@ public class HttpServer
 		BinaryWriter out_stream = new BinaryWriter(conn_stream);
 
 		String s = "";
-		while(conn_stream.DataAvailable)
+		byte[] buffer = new byte[1024];
+		int bytesRead;
+		while((bytesRead=in_stream.BaseStream.Read(buffer,0,buffer.Length))>0)
 		{
-			byte b = (byte)in_stream.ReadSByte();
-			Console.Write((char)b);
-			s += (char)b;
+			//byte b = (byte)in_stream.ReadSByte();
+			//Console.Write((char)b);
+			//s += (char)b;
+			s += Encoding.UTF8.GetString(buffer, 0, bytesRead);
+			if (s.Contains("\r\n\r\n"))//kraj HTTP headera
+				break;
 		}
+		Logger.Log("RAW REQUEST");
+		Logger.Log(s);
 
 		if(!s.StartsWith("GET"))
 		{
@@ -120,35 +128,38 @@ public class HttpServer
 			{
 				Logger.Log("Requested path: " + items[1]);
 
-				if(check_path(items[1]))
+				string path = items[1].TrimStart('/');
+				string fullpath=Path.Combine(rootFolder, path);
+
+				if(File.Exists(fullpath))
 				{
 					out_stream.Write("HTTP/1.1 200 OK\r\n".ToCharArray());
 					byte[] fbytes;
-
-					//kes deo
-					//u slucaju zahteva za istim resursom, obrada se izvsava samo jednom
-					if(cache.TryGetValue(items[1], out fbytes))
+                    
+                    //kes deo
+                    //u slucaju zahteva za istim resursom, obrada se izvsava samo jednom
+                    if (cache.TryGetValue(fullpath, out fbytes))
 					{
-						Logger.Log("CACHE HIT: " + items[1]);
+						Logger.Log("CACHE HIT: " + fullpath);
 					}
 					else
 					{
-						Logger.Log("CACHE MISS: " + items[1]);
-						object lockObj = filelocks.GetOrAdd(items[1],new object());
+						Logger.Log("CACHE MISS: " + fullpath);
+						object lockObj = filelocks.GetOrAdd(fullpath,new object());
 						
 						lock (lockObj)
 						{
-							if(!cache.TryGetValue(items[1], out fbytes))
+							if(!cache.TryGetValue(fullpath, out fbytes))
 							{
 								//IO kriticna operacija
-								fbytes=File.ReadAllBytes(items[1]);
+								fbytes=File.ReadAllBytes(fullpath);
 								EnsureCacheLimit();//kontrola velicine kesa
-								cache[items[1]] = fbytes;
+								cache[fullpath] = fbytes;
 							}
 						}
 					}
 					// check for cache hit	
-					if(items[1].EndsWith(".txt"))
+					if(fullpath.EndsWith(".txt"))
 					{
 						Logger.Log("Converting text file to binary");
 
