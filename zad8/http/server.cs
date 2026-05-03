@@ -6,7 +6,9 @@ using System.Text;
 using System.Collections.Concurrent;
 
 public class HttpServer
-{	
+{
+	private const int MAX_CACHE_SIZE = 10;
+
 	//zahtev klijenata
 	private Queue<Socket> requestQueue=new Queue<Socket>();
 	private object queueLock=new object();
@@ -30,7 +32,7 @@ public class HttpServer
 
 		for(int i=0; i<br_zahteva; i++)
 		{
-			Thread nit = new Thread(worker);
+			Thread nit = new Thread(Worker);
 			nit.Start();
 		}
 	}
@@ -41,6 +43,7 @@ public class HttpServer
 		{
 			Socket req = socket.Accept();
 			//ThreadPool.QueueUserWorkItem(process_request, req);
+			//kriticna sekcija
 			lock (queueLock)
 			{
 				requestQueue.Enqueue(req);
@@ -55,12 +58,24 @@ public class HttpServer
 		return File.Exists(path) && !Directory.Exists(path);
 	}
 
-	private void worker()
+	private void EnsureCacheLimit()
+	{
+		if (cache.Count >= MAX_CACHE_SIZE)
+		{
+			var firstKey=cache.Keys.First();
+			cache.TryRemove(firstKey, out _);
+			Logger.Log("CACHE EVICTED: "+ firstKey);
+		}
+	}
+
+	private void Worker()
 	{	
 		
 		while (true)
 		{
 			Socket req;
+			
+			//kriticna sekcija za pristup queue
 			lock (queueLock)
 			{
                 //ceka na nove zahteve
@@ -120,11 +135,14 @@ public class HttpServer
 					{
 						Logger.Log("CACHE MISS: " + items[1]);
 						object lockObj = filelocks.GetOrAdd(items[1],new object());
+						
 						lock (lockObj)
 						{
 							if(!cache.TryGetValue(items[1], out fbytes))
 							{
+								//IO kriticna operacija
 								fbytes=File.ReadAllBytes(items[1]);
+								EnsureCacheLimit();//kontrola velicine kesa
 								cache[items[1]] = fbytes;
 							}
 						}
