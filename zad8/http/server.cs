@@ -3,9 +3,18 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Text;
+using System.Collections.Concurrent;
 
 public class HttpServer
-{
+{	
+	//zahtev klijenata
+	private Queue<Socket> requestQueue=new Queue<Socket>();
+	private object queueLock=new object();
+
+	private readonly ConcurrentDictionary<string, byte[]> cache=new ConcurrentDictionary<string, byte[]>();
+	private readonly ConcurrentDictionary<string,object> filelocks=new ConcurrentDictionary<string, object>();
+
+
 	public HttpServer(int port, int max_connections)
 	{
 		socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -16,6 +25,14 @@ public class HttpServer
 		socket.Listen(max_connections);
 
 		Logger.Log("Started HTTP server on port " + port);
+
+		int br_zahteva=5;
+
+		for(int i=0; i<br_zahteva; i++)
+		{
+			Thread nit = new Thread(worker);
+			nit.Start();
+		}
 	}
 	
 	public void listen()
@@ -23,13 +40,39 @@ public class HttpServer
 		while(true)
 		{
 			Socket req = socket.Accept();
-			ThreadPool.QueueUserWorkItem(process_request, req);
+			//ThreadPool.QueueUserWorkItem(process_request, req);
+			lock (queueLock)
+			{
+				requestQueue.Enqueue(req);
+				Monitor.Pulse(queueLock);
+			}
+			
 		}
 	}
 
 	private bool check_path(string path)
 	{
 		return File.Exists(path) && !Directory.Exists(path);
+	}
+
+	private void worker()
+	{	
+		
+		while (true)
+		{
+			Socket req;
+			lock (queueLock)
+			{
+                //ceka na nove zahteve
+                while (requestQueue.Count == 0)
+				{
+					Monitor.Wait(queueLock);
+				}
+				req=requestQueue.Dequeue();
+
+			}
+			process_request(req);
+		}
 	}
 
 	private void process_request(object? param)
@@ -65,7 +108,27 @@ public class HttpServer
 				if(check_path(items[1]))
 				{
 					out_stream.Write("HTTP/1.1 200 OK\r\n".ToCharArray());
-					
+					byte[] fbytes;
+
+					//kes deo
+					//u slucaju zahteva za istim resursom, obrada se izvsava samo jednom
+					if(cache.TryGetValue(items[1], out fbytes))
+					{
+						Logger.Log("CACHE HIT: " + items[1]);
+					}
+					else
+					{
+						Logger.Log("CACHE MISS: " + items[1]);
+						object lockObj = filelocks.GetOrAdd(items[1],new object());
+						lock (lockObj)
+						{
+							if(!cache.TryGetValue(items[1], out fbytes))
+							{
+								fbytes=File.ReadAllBytes(items[1]);
+								cache[items[1]] = fbytes;
+							}
+						}
+					}
 					// check for cache hit	
 					if(items[1].EndsWith(".txt"))
 					{
@@ -75,7 +138,7 @@ public class HttpServer
 						out_stream.Write("Content-Type: application/octet-stream\r\n".ToCharArray());
 						out_stream.Write("Content-Disposition: attachment\r\n".ToCharArray());
 
-						byte[] fbytes = File.ReadAllBytes(items[1]);
+						//byte[] fbytes = File.ReadAllBytes(items[1]);
 						// store into cache
 
 						out_stream.Write(("Content-Length: " + fbytes.Length + "\r\n").ToCharArray());
@@ -89,7 +152,7 @@ public class HttpServer
 						out_stream.Write("Content-Type: text/plain\r\n".ToCharArray());
 						out_stream.Write("Content-Disposition: attachment\r\n".ToCharArray());
 
-						byte[] fbytes = File.ReadAllBytes(items[1]);
+						//byte[] fbytes = File.ReadAllBytes(items[1]);
 						string text = Encoding.UTF8.GetString(fbytes);
 						// store into cache
 						
