@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 public class HttpServer
 {
 	private const int MAX_CACHE_SIZE = 10;
+	private readonly string rootFolder = ".";
 
 	//zahtev klijenata
 	private Queue<Socket> requestQueue=new Queue<Socket>();
@@ -39,8 +40,8 @@ public class HttpServer
 
 		for(int i=0; i<br_zahteva; i++)
 		{
-			Thread nit = new Thread(Worker);
-			nit.Start();
+			Thread t = new Thread(Worker);
+			t.Start();
 		}
 	}
 	
@@ -105,12 +106,16 @@ public class HttpServer
 		BinaryWriter out_stream = new BinaryWriter(conn_stream);
 
 		String s = "";
-		while(conn_stream.DataAvailable)
+		byte[] buffer = new byte[1024];
+		int bytesRead;
+		while((bytesRead=in_stream.BaseStream.Read(buffer,0,buffer.Length))>0)
 		{
-			byte b = (byte)in_stream.ReadSByte();
-			// DEBUG Console.Write((char)b);
-			s += (char)b;
+			s += Encoding.UTF8.GetString(buffer, 0, bytesRead);
+			if (s.Contains("\r\n\r\n"))//kraj HTTP headera
+				break;
 		}
+		Logger.Log("RAW REQUEST");
+		Logger.Log(s);
 
 		if(!s.StartsWith("GET"))
 		{
@@ -123,14 +128,17 @@ public class HttpServer
 
 			if(items.Length >= 2 && items[0] == "GET")
 			{
-				Logger.Log("Requested path: " + items[1]);
+				string path = rootFolder + items[1];
+				
+				Logger.Log("Requested path: " + path);
 
-				if(check_path(items[1]))
+				if(check_path(path))
 				{
 					out_stream.Write("HTTP/1.1 200 OK\r\n".ToCharArray());
+					
 					CacheItem cache_item;
 
-					bool src_is_text = items[1].EndsWith(".txt");
+					bool src_is_text = path.EndsWith(".txt");
 					if(src_is_text)
 						Logger.Log("Converting text file to binary");
 					else
@@ -138,21 +146,21 @@ public class HttpServer
 					
 					//kes deo
 					//u slucaju zahteva za istim resursom, obrada se izvsava samo jednom
-					if(cache.TryGetValue(items[1], out cache_item))
+					if(cache.TryGetValue(path, out cache_item))
 					{
-						Logger.Log("CACHE HIT: " + items[1]);
+						Logger.Log("CACHE HIT: " + path);
 					}
 					else
 					{
-						Logger.Log("CACHE MISS: " + items[1]);
-						object lockObj = filelocks.GetOrAdd(items[1],new object());
+						Logger.Log("CACHE MISS: " + path);
+						object lockObj = filelocks.GetOrAdd(path, new object());
 						
 						lock (lockObj)
 						{
-							if(!cache.TryGetValue(items[1], out cache_item))
+							if(!cache.TryGetValue(path, out cache_item))
 							{
 								//IO kriticna operacija
-								byte[] fbytes=File.ReadAllBytes(items[1]);
+								byte[] fbytes=File.ReadAllBytes(path);
 								EnsureCacheLimit();//kontrola velicine kesa
 								cache_item = new CacheItem();
 								if(src_is_text)
@@ -194,7 +202,7 @@ public class HttpServer
 				}
 				else
 				{
-					Logger.Log("File " + items[1] + " not found");
+					Logger.Log("File " + path + " not found");
 					string resp_str = "HTTP/1.1 404 Not Found\r\n";
 					out_stream.Write(resp_str.ToCharArray());
 
