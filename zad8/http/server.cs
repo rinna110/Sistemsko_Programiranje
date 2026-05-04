@@ -13,7 +13,14 @@ public class HttpServer
 	private Queue<Socket> requestQueue=new Queue<Socket>();
 	private object queueLock=new object();
 
-	private readonly ConcurrentDictionary<string, byte[]> cache=new ConcurrentDictionary<string, byte[]>();
+	public class CacheItem
+	{
+		public byte[]? bytes;
+		public string? str;
+		public bool is_text;
+	};
+
+	private readonly ConcurrentDictionary<string, CacheItem> cache=new ConcurrentDictionary<string, CacheItem>();
 	private readonly ConcurrentDictionary<string,object> filelocks=new ConcurrentDictionary<string, object>();
 
 
@@ -42,7 +49,6 @@ public class HttpServer
 		while(true)
 		{
 			Socket req = socket.Accept();
-			//ThreadPool.QueueUserWorkItem(process_request, req);
 			//kriticna sekcija
 			lock (queueLock)
 			{
@@ -78,8 +84,8 @@ public class HttpServer
 			//kriticna sekcija za pristup queue
 			lock (queueLock)
 			{
-                //ceka na nove zahteve
-                while (requestQueue.Count == 0)
+				//ceka na nove zahteve
+				while (requestQueue.Count == 0)
 				{
 					Monitor.Wait(queueLock);
 				}
@@ -92,7 +98,6 @@ public class HttpServer
 
 	private void process_request(object? param)
 	{
-		// never null, only passed in from listen()
 		Socket req = (Socket)param!;
 
 		NetworkStream conn_stream = new NetworkStream(req);
@@ -103,7 +108,7 @@ public class HttpServer
 		while(conn_stream.DataAvailable)
 		{
 			byte b = (byte)in_stream.ReadSByte();
-			Console.Write((char)b);
+			// DEBUG Console.Write((char)b);
 			s += (char)b;
 		}
 
@@ -123,11 +128,17 @@ public class HttpServer
 				if(check_path(items[1]))
 				{
 					out_stream.Write("HTTP/1.1 200 OK\r\n".ToCharArray());
-					byte[] fbytes;
+					CacheItem cache_item;
 
+					bool src_is_text = items[1].EndsWith(".txt");
+					if(src_is_text)
+						Logger.Log("Converting text file to binary");
+					else
+						Logger.Log("Converting binary file to text");
+					
 					//kes deo
 					//u slucaju zahteva za istim resursom, obrada se izvsava samo jednom
-					if(cache.TryGetValue(items[1], out fbytes))
+					if(cache.TryGetValue(items[1], out cache_item))
 					{
 						Logger.Log("CACHE HIT: " + items[1]);
 					}
@@ -138,46 +149,47 @@ public class HttpServer
 						
 						lock (lockObj)
 						{
-							if(!cache.TryGetValue(items[1], out fbytes))
+							if(!cache.TryGetValue(items[1], out cache_item))
 							{
 								//IO kriticna operacija
-								fbytes=File.ReadAllBytes(items[1]);
+								byte[] fbytes=File.ReadAllBytes(items[1]);
 								EnsureCacheLimit();//kontrola velicine kesa
-								cache[items[1]] = fbytes;
+								cache_item = new CacheItem();
+								if(src_is_text)
+								{
+									cache_item.bytes = fbytes;
+								}
+								else
+								{
+									cache_item.str = Encoding.UTF8.GetString(fbytes);;
+								}
+								
+								// after conversion 
+								cache_item.is_text = !src_is_text;
+								
+								cache[items[1]] = cache_item;
 							}
 						}
 					}
-					// check for cache hit	
-					if(items[1].EndsWith(".txt"))
+					
+					if(src_is_text)
 					{
-						Logger.Log("Converting text file to binary");
-
-
 						out_stream.Write("Content-Type: application/octet-stream\r\n".ToCharArray());
 						out_stream.Write("Content-Disposition: attachment\r\n".ToCharArray());
 
-						//byte[] fbytes = File.ReadAllBytes(items[1]);
-						// store into cache
-
-						out_stream.Write(("Content-Length: " + fbytes.Length + "\r\n").ToCharArray());
+						out_stream.Write(("Content-Length: " + cache_item.bytes!.Length + "\r\n").ToCharArray());
 						out_stream.Write("\r\n".ToCharArray());
-						out_stream.Write(fbytes);
+						out_stream.Write(cache_item.bytes);
 					}
 					else
 					{
-						Logger.Log("Converting binary file to text");
-
 						out_stream.Write("Content-Type: text/plain\r\n".ToCharArray());
 						out_stream.Write("Content-Disposition: attachment\r\n".ToCharArray());
 
-						//byte[] fbytes = File.ReadAllBytes(items[1]);
-						string text = Encoding.UTF8.GetString(fbytes);
-						// store into cache
-						
-						var clen = Encoding.UTF8.GetByteCount(text);
+						var clen = Encoding.UTF8.GetByteCount(cache_item.str!);
 						out_stream.Write(("Content-Length: " + clen + "\r\n").ToCharArray());
 						out_stream.Write("\r\n".ToCharArray());
-						out_stream.Write(text.ToCharArray());
+						out_stream.Write(cache_item.str!.ToCharArray());
 					}
 				}
 				else
