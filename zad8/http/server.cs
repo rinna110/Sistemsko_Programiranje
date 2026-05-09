@@ -114,11 +114,9 @@ public class HttpServer
 			if (s.Contains("\r\n\r\n"))//kraj HTTP headera
 				break;
 		}
-		Logger.Log("\n");
-		Logger.Log("RAW REQUEST");
-		Logger.Log(s);
+		
 
-		if(!s.StartsWith("GET"))
+        if (!s.StartsWith("GET"))
 		{
 			string resp_str = "HTTP/1.1 405 Method Not Allowed\r\n";
 			out_stream.Write(resp_str.ToCharArray());
@@ -126,10 +124,13 @@ public class HttpServer
 		else
 		{
 			string[] items = s.Split();
+			
 
-			if(items.Length >= 2 && items[0] == "GET")
+            if (items.Length >= 2 && items[0] == "GET")
 			{
-				string path = config.rootFolder + items[1];
+                Logger.Log("\n");
+                Logger.Log(s);
+                string path = config.rootFolder + items[1];
 				
 				Logger.Log("Requested path: " + path);
 
