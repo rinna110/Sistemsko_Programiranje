@@ -7,9 +7,6 @@ using System.Collections.Concurrent;
 
 public class HttpServer
 {
-	private const int MAX_CACHE_SIZE = 10;
-	private readonly string rootFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "root");
-
     //zahtev klijenata
     private Queue<Socket> requestQueue=new Queue<Socket>();
 	private object queueLock=new object();
@@ -24,21 +21,24 @@ public class HttpServer
 	private readonly ConcurrentDictionary<string, CacheItem> cache=new ConcurrentDictionary<string, CacheItem>();
 	private readonly ConcurrentDictionary<string,object> filelocks=new ConcurrentDictionary<string, object>();
 
-
-	public HttpServer(int port, int max_connections)
+	public HttpServer(ServerConfig cfg)
 	{
+		config = cfg;
+
 		socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-		endpoint = new IPEndPoint(IPAddress.Any, port);
+		endpoint = new IPEndPoint(IPAddress.Any, config.port);
 	
 		socket.Bind(endpoint);
 
-		socket.Listen(max_connections);
+		socket.Listen(config.maxConnections);
 
-		Logger.Log("Started HTTP server on port " + port);
+		Logger.Log("Started HTTP server on port " + config.port);
+		Logger.Log("Max connections: " + config.maxConnections);
+		Logger.Log("Max cache size: " + config.maxCacheSize);
+		Logger.Log("Worker threads: " + config.threadCount);
+		Logger.Log("HTTP root folder: " + config.rootFolder);
 
-		int br_zahteva=5;
-
-		for(int i=0; i<br_zahteva; i++)
+		for(int i = 0; i < config.threadCount; i++)
 		{
 			Thread t = new Thread(Worker);
 			t.Start();
@@ -67,7 +67,7 @@ public class HttpServer
 
 	private void EnsureCacheLimit()
 	{
-		if (cache.Count >= MAX_CACHE_SIZE)
+		if (cache.Count >= config.maxCacheSize)
 		{
 			var firstKey=cache.Keys.First();
 			cache.TryRemove(firstKey, out _);
@@ -129,7 +129,7 @@ public class HttpServer
 
 			if(items.Length >= 2 && items[0] == "GET")
 			{
-				string path = rootFolder + items[1];
+				string path = config.rootFolder + items[1];
 				
 				Logger.Log("Requested path: " + path);
 
@@ -221,4 +221,5 @@ public class HttpServer
 
 	private Socket socket;
 	private IPEndPoint endpoint;
+	private ServerConfig config;
 };
