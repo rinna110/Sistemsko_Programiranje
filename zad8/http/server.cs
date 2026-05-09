@@ -176,7 +176,7 @@ public class HttpServer
 								// after conversion 
 								cache_item.is_text = !src_is_text;
 								
-								cache[items[1]] = cache_item;
+								cache[path] = cache_item;
 							}
 						}
 					}
