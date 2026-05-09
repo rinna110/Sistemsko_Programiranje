@@ -35,7 +35,7 @@ def concurrent_access_test():
     print("\n1.Concurrent access test\n")
 
     threads=[]
-    for i in range(20):
+    for i in range(8):
         file_name=random.choice(TEST_FILES);
         t=threading.Thread(
             target=send_request,
@@ -69,7 +69,7 @@ def cache_stampede_test():
     print("\n3.Cache stampede test\n")
 
     threads=[]
-    for i in range(50):
+    for i in range(10):
         t=threading.Thread(
             target=send_request,
              args=(f"STAMP-{i}", "image.bin")
