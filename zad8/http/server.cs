@@ -8,10 +8,10 @@ using System.Collections.Concurrent;
 public class HttpServer
 {
 	private const int MAX_CACHE_SIZE = 10;
-	private readonly string rootFolder = ".";
+	private readonly string rootFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "root");
 
-	//zahtev klijenata
-	private Queue<Socket> requestQueue=new Queue<Socket>();
+    //zahtev klijenata
+    private Queue<Socket> requestQueue=new Queue<Socket>();
 	private object queueLock=new object();
 
 	public class CacheItem
@@ -114,6 +114,7 @@ public class HttpServer
 			if (s.Contains("\r\n\r\n"))//kraj HTTP headera
 				break;
 		}
+		Logger.Log("\n");
 		Logger.Log("RAW REQUEST");
 		Logger.Log(s);
 
