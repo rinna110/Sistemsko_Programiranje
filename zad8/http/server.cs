@@ -16,6 +16,7 @@ public class HttpServer
 		public byte[]? bytes;
 		public string? str;
 		public bool is_text;
+		public DateTime create_time;
 	};
 
 	private readonly ConcurrentDictionary<string, CacheItem> cache=new ConcurrentDictionary<string, CacheItem>();
@@ -37,6 +38,7 @@ public class HttpServer
 		Logger.Log("Max cache size: " + config.maxCacheSize);
 		Logger.Log("Worker threads: " + config.threadCount);
 		Logger.Log("HTTP root folder: " + config.rootFolder);
+		Logger.Log("Cache TTL: " + config.ttl_seconds + " seconds");
 
 		for(int i = 0; i < config.threadCount; i++)
 		{
@@ -148,7 +150,7 @@ public class HttpServer
 					
 					//kes deo
 					//u slucaju zahteva za istim resursom, obrada se izvsava samo jednom
-					if(cache.TryGetValue(path, out cache_item))
+					if(cache.TryGetValue(path, out cache_item) && (DateTime.UtcNow - cache_item.create_time).TotalSeconds < config.ttl_seconds)
 					{
 						Logger.Log("CACHE HIT: " + path);
 					}
@@ -176,7 +178,8 @@ public class HttpServer
 								
 								// after conversion 
 								cache_item.is_text = !src_is_text;
-								
+								cache_item.create_time = DateTime.UtcNow;
+
 								cache[path] = cache_item;
 							}
 						}

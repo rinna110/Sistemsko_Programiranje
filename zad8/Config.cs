@@ -5,4 +5,5 @@ public class ServerConfig
 	public int maxCacheSize = 3;
 	public int threadCount = 5;
 	public string rootFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "root");
+	public int ttl_seconds = 86400;
 }
