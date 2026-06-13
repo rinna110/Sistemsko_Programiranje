@@ -95,7 +95,13 @@ public class HttpServer
 				req=requestQueue.Dequeue();
 
 			}
-			await process_request(req);
+			
+			Task continuation = process_request(req).ContinueWith((t) =>
+			{
+				if(t.IsFaulted)
+					Logger.Log("Error while processing request: " + t.Exception.Message);	
+			});
+			continuation.Wait();
 		}
 	}
 
