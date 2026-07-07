@@ -7,9 +7,6 @@ using System.Collections.Concurrent;
 
 public class HttpServer
 {
-    //zahtev klijenata
-    private Queue<Socket> requestQueue=new Queue<Socket>();
-	private object queueLock=new object();
 
 	public class CacheItem
 	{
@@ -40,11 +37,6 @@ public class HttpServer
 		Logger.Log("HTTP root folder: " + config.rootFolder);
 		Logger.Log("Cache TTL: " + config.ttl_seconds + " seconds");
 
-		//paralelna obrada mora biti kontrolisana!!
-		for(int i = 0; i < config.threadCount; i++)
-		{
-			Task.Run(Worker);
-		}
 	}
 	
 	public void listen()
@@ -52,14 +44,21 @@ public class HttpServer
 		while(true)
 		{
 			Socket req = socket.Accept();
-			//kriticna sekcija
-			lock (queueLock)
-			{
-				requestQueue.Enqueue(req);
-				Monitor.Pulse(queueLock);
-			}
-			
-		}
+
+            Task.Run(() =>
+            {
+                return process_request(req);
+            })
+        .ContinueWith(t =>
+        {
+            if (t.IsFaulted)
+            {
+                Logger.Log("Error while processing request: " +
+                           t.Exception.Message);
+            }
+        });
+
+        }
 	}
 
 	private bool check_path(string path)
@@ -77,41 +76,11 @@ public class HttpServer
 		}
 	}
 
-	private async Task Worker()
-	{	
-		
-		while (true)
-		{
-			Socket req;
-			
-			//kriticna sekcija za pristup queue
-			lock (queueLock)
-			{
-				//ceka na nove zahteve
-				while (requestQueue.Count == 0)
-				{
-					Monitor.Wait(queueLock);
-				}
-				req=requestQueue.Dequeue();
-
-			}
-			
-			Task continuation = process_request(req).ContinueWith((t) =>
-			{
-				if(t.IsFaulted)
-					Logger.Log("Error while processing request: " + t.Exception.Message);	
-			});
-			continuation.Wait();
-		}
-	}
-
 	private async Task process_request(object? param)
 	{
 		Socket req = (Socket)param!;
 
 		NetworkStream conn_stream = new NetworkStream(req);
-		BinaryReader in_stream = new BinaryReader(conn_stream);
-		BinaryWriter out_stream = new BinaryWriter(conn_stream);
 
 		String s = "";
 		byte[] buffer = new byte[1024];
@@ -144,7 +113,7 @@ public class HttpServer
 
 				if(check_path(path))
 				{
-					await conn_stream.WriteAsync(Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n".ToCharArray()));
+					await conn_stream.WriteAsync(Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n"));
 					
 					CacheItem cache_item;
 
@@ -221,10 +190,6 @@ public class HttpServer
 				}
 			}	
 		}
-
-		out_stream.Flush();
-		out_stream.Close();
-		in_stream.Close();
 		conn_stream.Close();
 		req.Close();
 	}
