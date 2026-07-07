@@ -12,7 +12,7 @@ namespace Projekat3.Server
 {
     internal class WebServer
     {
-        private readonly HttpListener _listener=new();
+        private readonly HttpListener _listener;
 
         //referenca na LeagueActor
         private readonly IActorRef _leagueActor;
@@ -20,6 +20,7 @@ namespace Projekat3.Server
         public WebServer(IActorRef leagueActor)
         {
             _leagueActor = leagueActor;
+            _listener = new HttpListener();
             _listener.Prefixes.Add("http://localhost:5000/");
             
         }
@@ -48,12 +49,13 @@ namespace Projekat3.Server
                
                 try
                 {
-                    
-                    Logger.Log(context.Request.HttpMethod + context.Request.Url.AbsolutePath);
+                    string method = context.Request.HttpMethod;
+
+                    Logger.Log(method + context.Request.Url.AbsolutePath);
 
                     string path = context.Request.Url.AbsolutePath;
 
-                    if (path == "/standings")
+                    if (path == "/standings" && method=="GET")
                     {
                         var response = await _leagueActor.Ask<StandingsResponse>(
                             new GetStandingsRequest(),
@@ -122,6 +124,7 @@ namespace Projekat3.Server
             }
 
         }
+
 
         public void Stop()
         {

@@ -50,6 +50,7 @@ namespace Projekat3.Actors
         protected override void PreStart()
         {
             Logger.Log("LeagueActor je pokrenut");
+            Logger.Log($"LeagueActor koristi dispatcher: {Context.Props.Dispatcher}");
         }
 
         protected override void PostStop()

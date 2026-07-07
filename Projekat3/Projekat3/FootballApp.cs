@@ -10,7 +10,7 @@ using Projekat3.Rx;
 using Projekat3.Messages;
 using Projekat3.Server;
 using Microsoft.Extensions.Configuration;
-
+using Akka.Configuration;
 namespace Projekat3
 {
     internal class FootballApp
@@ -31,11 +31,38 @@ namespace Projekat3
             {
                 throw new Exception("API ključ nije pronađen u appsettings.json.");
             }
+            var akkaConfig = ConfigurationFactory.ParseString(@"
+                    akka {
 
-            using var system = ActorSystem.Create("football-system");
+                        actor {
+
+                            deployment {
+
+                                /league-actor {
+                                    dispatcher = league-dispatcher
+                                }
+
+                            }
+
+                            league-dispatcher {
+
+                                type = Dispatcher
+
+                                executor = fork-join-executor
+
+                                throughput = 100
+
+                            }
+
+                        }
+
+                    }
+                ");
+            using var system = ActorSystem.Create("football-system",akkaConfig);
 
             //pravimo novog aktora
             //vraca referencu IActorRef (adresa aktora)
+           
             var leagueActor = system.ActorOf(
                  Props.Create(() => new LeagueActor()),
                  "league-actor");

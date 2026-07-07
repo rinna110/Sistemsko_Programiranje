@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reactive.Concurrency;
+
 
 namespace Projekat3.Rx
 {
@@ -25,7 +27,12 @@ namespace Projekat3.Rx
             return Observable
                 .Interval(TimeSpan.FromSeconds(10))
                 .StartWith(0)
-                .SelectMany( _ =>_api.GetStandingsAsync(leagueId, season));
+                .SubscribeOn(TaskPoolScheduler.Default)
+                .SelectMany(async _ =>
+                {
+                    return await _api.GetStandingsAsync(leagueId, season);
+                });
+        
         }
 
     }
