@@ -16,7 +16,6 @@ namespace Projekat3.Server
 
         //referenca na LeagueActor
         private readonly IActorRef _leagueActor;
-        private bool _isRunning;
 
         public WebServer(IActorRef leagueActor)
         {
@@ -29,17 +28,28 @@ namespace Projekat3.Server
         {
             _listener.Start();
 
-            Console.WriteLine("WebServer je pokrenut");
-            Console.WriteLine("http://localhost:5000/");
+            Logger.Log("WebServer je pokrenut");
+            Logger.Log("http://localhost:5000/");
+
+            
 
             while (true)
             {
-                var context = await _listener.GetContextAsync();
+                HttpListenerContext context;
+
                 try
                 {
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] " +
-                                      $"{context.Request.HttpMethod} " +
-                                      $"{context.Request.Url.AbsolutePath}");
+                    context = await _listener.GetContextAsync();
+                }
+                catch (HttpListenerException)
+                {
+                    break;
+                }
+               
+                try
+                {
+                    
+                    Logger.Log(context.Request.HttpMethod + context.Request.Url.AbsolutePath);
 
                     string path = context.Request.Url.AbsolutePath;
 
@@ -49,8 +59,7 @@ namespace Projekat3.Server
                             new GetStandingsRequest(),
                             TimeSpan.FromSeconds(5));
 
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] " +
-                                          $"LeagueActor vratio {response.Standings.Count} timova.");
+                       Logger.Log($"LeagueActor vratio {response.Standings.Count} timova.");
 
                         string responseText = JsonSerializer.Serialize(
                             response.Standings,
@@ -61,21 +70,29 @@ namespace Projekat3.Server
 
                         byte[] buffer = Encoding.UTF8.GetBytes(responseText);
 
+                        context.Response.StatusCode = 200;
+                        context.Response.ContentType = "application/json";
+                        context.Response.ContentEncoding = Encoding.UTF8;
+
                         context.Response.ContentLength64 = buffer.Length;
 
                         await context.Response.OutputStream.WriteAsync(buffer);
 
                         context.Response.Close();
 
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] HTTP odgovor uspesno poslat.");
+                        Logger.Log("HTTP odgovor uspesno poslat.");
                     }
                     else
                     {
-                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Nepostojeca ruta: {path}");
+                        Logger.Log($"Nepostojeca ruta: {path}");
 
                         context.Response.StatusCode = 404;
 
                         byte[] buffer = Encoding.UTF8.GetBytes("404 - Not Found");
+
+                   
+                        context.Response.ContentType = "text/plain";
+                        context.Response.ContentEncoding = Encoding.UTF8;
 
                         context.Response.ContentLength64 = buffer.Length;
 
@@ -86,11 +103,14 @@ namespace Projekat3.Server
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ERROR: {ex.Message}");
+                    Logger.Log($"ERROR: {ex.Message}");
 
                     context.Response.StatusCode = 500;
 
                     byte[] buffer = Encoding.UTF8.GetBytes("Internal Server Error");
+
+                    context.Response.ContentType = "text/plain";
+                    context.Response.ContentEncoding = Encoding.UTF8;
 
                     context.Response.ContentLength64 = buffer.Length;
 
@@ -101,6 +121,13 @@ namespace Projekat3.Server
 
             }
 
+        }
+
+        public void Stop()
+        {
+           
+            _listener.Stop();
+           Logger.Log("WebServer zausavljen");
         }
     }
 }

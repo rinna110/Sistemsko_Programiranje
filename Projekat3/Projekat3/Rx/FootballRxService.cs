@@ -25,10 +25,7 @@ namespace Projekat3.Rx
             return Observable
                 .Interval(TimeSpan.FromSeconds(10))
                 .StartWith(0)
-                .SelectMany(async _ =>
-                {
-                    return await _api.GetStandingsAsync(leagueId, season);
-                });
+                .SelectMany( _ =>_api.GetStandingsAsync(leagueId, season));
         }
 
     }

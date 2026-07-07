@@ -23,6 +23,14 @@ namespace Projekat3
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
             string? apiKey = configuration["ApiFootball:ApiKey"];
+            int leagueId = configuration.GetValue<int>("ApiFootball:LeagueId");
+            int season = configuration.GetValue<int>("ApiFootball:Season");
+            Logger.Log($"Liga: {leagueId}");
+            Logger.Log($"Sezona: {season}");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new Exception("API ključ nije pronađen u appsettings.json.");
+            }
 
             using var system = ActorSystem.Create("football-system");
 
@@ -31,36 +39,27 @@ namespace Projekat3
             var leagueActor = system.ActorOf(
                  Props.Create(() => new LeagueActor()),
                  "league-actor");
-            var api = new ApiFootballService("apiKey");
+            var api = new ApiFootballService(apiKey);
 
             var rx = new FootballRxService(api);
 
             //svaki put kada Rx dobije tabelu poziva standings=>
-            var subscription = rx.GetStandingsStream(39, 2022).Subscribe(standings =>
+            var subscription = rx.GetStandingsStream(leagueId,season).Subscribe(standings =>
             {
                 leagueActor.Tell(new UpdateStandings(standings));
             });
 
-            await Task.Delay(5000);
-
-            var response = await leagueActor.Ask<StandingsResponse>(new GetStandingsRequest());
-
-            Console.WriteLine();
-            Console.WriteLine("---------TABELA-----------");
-
-            foreach(var team in response.Standings)
-            {
-                Console.WriteLine(
-        $"{team.Position}. {team.TeamName} - {team.Points} bodova - {team.SuccessPercentage:F2}%");
-            }
-
             var webServer = new WebServer(leagueActor);
             _=webServer.Start();
 
-            Console.WriteLine("Aplikacija je pokrenuta\n");
+            Logger.Log("Aplikacija je pokrenuta\n");
             Console.ReadLine();
 
             subscription.Dispose();
+
+            webServer.Stop();
+
+            await system.Terminate();
         }
     }
 }

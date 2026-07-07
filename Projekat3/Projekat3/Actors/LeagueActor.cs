@@ -34,11 +34,11 @@ namespace Projekat3.Actors
                         }
                     }
                     _standings=update.Standings;
-                    Console.WriteLine($"[LeagueActor] Primljena nova tabela ({_standings.Count} timova).");
+                    Logger.Log($"[LeagueActor] Primljena nova tabela ({_standings.Count} timova).");
                     break;
                 case GetStandingsRequest request:
                     //odgovori onom koji je poslao poruku (web server)
-                    Console.WriteLine("[LeagueActor] Poslat odgovor sa trenutnom tabelom.");
+                    Logger.Log("[LeagueActor] Poslat odgovor sa trenutnom tabelom.");
                     Sender.Tell(new StandingsResponse(new List<TeamStanding>(_standings)));
                     break;
                 default:
@@ -49,12 +49,12 @@ namespace Projekat3.Actors
 
         protected override void PreStart()
         {
-            Console.WriteLine("LeagueActor je pokrenut");
+            Logger.Log("LeagueActor je pokrenut");
         }
 
         protected override void PostStop()
         {
-            Console.WriteLine("LeagueActor je zaustavljen");
+            Logger.Log("LeagueActor je zaustavljen");
         }
 
     }
