@@ -128,7 +128,6 @@ namespace Projekat3.Server
 
         public void Stop()
         {
-           
             _listener.Stop();
            Logger.Log("WebServer zausavljen");
         }

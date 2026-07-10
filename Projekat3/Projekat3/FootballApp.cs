@@ -29,40 +29,39 @@ namespace Projekat3
             Logger.Log($"Sezona: {season}");
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                throw new Exception("API ključ nije pronađen u appsettings.json.");
+                throw new Exception("API kljuc nije pronadjen u appsettings.json");
             }
-            var akkaConfig = ConfigurationFactory.ParseString(@"
-                    akka {
 
-                        actor {
+           var akkaConfig = ConfigurationFactory.ParseString(@"
+              akka {
 
-                            deployment {
+                actor {
 
-                                /league-actor {
-                                    dispatcher = league-dispatcher
-                                }
+                    deployment {
 
-                            }
-
-                            league-dispatcher {
-
-                                type = Dispatcher
-
-                                executor = fork-join-executor
-
-                                throughput = 100
-
-                            }
-
+                        /league-actor {
+                            dispatcher = league-dispatcher
                         }
-
                     }
-                ");
-            using var system = ActorSystem.Create("football-system",akkaConfig);
+                }
+
+                league-dispatcher {
+
+                    type = Dispatcher
+
+                    executor = fork-join-executor
+
+                    throughput = 100
+                }
+            }
+
+             ");
+
+            using var system = ActorSystem.Create("football-system");
 
             //pravimo novog aktora
             //vraca referencu IActorRef (adresa aktora)
-           
+
             var leagueActor = system.ActorOf(
                  Props.Create(() => new LeagueActor()),
                  "league-actor");
