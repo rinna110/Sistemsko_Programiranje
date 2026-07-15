@@ -21,24 +21,12 @@ namespace Projekat3.Actors
             switch (message)
             {
                 case UpdateStandings update:
-                    foreach (var team in update.Standings)
-                    {
-                        int maxPoints = team.Played * 3;
-                        if(maxPoints == 0)
-                        {
-                            team.SuccessPercentage = 0;
-                        }
-                        else
-                        {
-                            team.SuccessPercentage = Math.Round((double)team.Points / maxPoints * 100, 2);
-                        }
-                    }
-                    _standings=update.Standings;
-                    Logger.Log($"[LeagueActor] Primljena nova tabela ({_standings.Count} timova).");
+                    _standings = update.Standings;
+                    Logger.Log($"[LeagueActor] Primljena nova tabela ({_standings.Count} timova)");
                     break;
                 case GetStandingsRequest request:
                     //odgovori onom koji je poslao poruku (web server)
-                    Logger.Log("[LeagueActor] Poslat odgovor sa trenutnom tabelom.");
+                    Logger.Log("[LeagueActor] Poslat odgovor sa trenutnom tabelom");
                     Sender.Tell(new StandingsResponse(new List<TeamStanding>(_standings)));
                     break;
                 default:

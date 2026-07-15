@@ -14,8 +14,5 @@ namespace Projekat3.Models
         public string TeamName { get; set; }
         public int Played { get; set; }
         public int Points { get; set; }
-
-        //ovo cemo izracunati u LeagueActoru
-        public double SuccessPercentage { get; set; }
     }
 }

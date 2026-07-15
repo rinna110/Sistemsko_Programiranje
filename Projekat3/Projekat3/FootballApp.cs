@@ -11,6 +11,7 @@ using Projekat3.Messages;
 using Projekat3.Server;
 using Microsoft.Extensions.Configuration;
 using Akka.Configuration;
+using Projekat3.Models;
 namespace Projekat3
 {
     internal class FootballApp
@@ -32,35 +33,14 @@ namespace Projekat3
                 throw new Exception("API kljuc nije pronadjen u appsettings.json");
             }
 
-           var akkaConfig = ConfigurationFactory.ParseString(@"
-              akka {
-
-                actor {
-
-                    deployment {
-
-                        /league-actor {
-                            dispatcher = league-dispatcher
-                        }
-                    }
-                }
-
-                league-dispatcher {
-
-                    type = Dispatcher
-
-                    executor = fork-join-executor
-
-                    throughput = 100
-                }
-            }
-
-             ");
-
             using var system = ActorSystem.Create("football-system");
 
             //pravimo novog aktora
             //vraca referencu IActorRef (adresa aktora)
+
+            var percentageActor = system.ActorOf(
+                Props.Create(() => new PercentageActor()),
+                "percentage-actor");
 
             var leagueActor = system.ActorOf(
                  Props.Create(() => new LeagueActor()),
@@ -72,10 +52,28 @@ namespace Projekat3
             //svaki put kada Rx dobije tabelu poziva standings=>
             var subscription = rx.GetStandingsStream(leagueId,season).Subscribe(standings =>
             {
-                leagueActor.Tell(new UpdateStandings(standings));
+                leagueActor.Tell(
+            new UpdateStandings(
+                standings.Select(t => new TeamStanding
+                {
+                    Position = t.Position,
+                    TeamName = t.TeamName,
+                    Played = t.Played,
+                    Points = t.Points
+                }).ToList()));
+
+                percentageActor.Tell(
+                    new UpdatePercentages(
+                        standings.Select(t => new TeamStanding
+                        {
+                            Position = t.Position,
+                            TeamName = t.TeamName,
+                            Played = t.Played,
+                            Points = t.Points
+                        }).ToList()));
             });
 
-            var webServer = new WebServer(leagueActor);
+            var webServer = new WebServer(leagueActor,percentageActor);
             _=webServer.Start();
 
             Logger.Log("Aplikacija je pokrenuta\n");

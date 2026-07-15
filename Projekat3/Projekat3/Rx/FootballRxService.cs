@@ -25,7 +25,7 @@ namespace Projekat3.Rx
         public IObservable<List<TeamStanding>> GetStandingsStream(int leagueId, int season)
         {
             return Observable
-                .Interval(TimeSpan.FromSeconds(10))
+                .Interval(TimeSpan.FromSeconds(60))
                 .StartWith(0)
                 .SubscribeOn(TaskPoolScheduler.Default)
                 .SelectMany(async _ =>

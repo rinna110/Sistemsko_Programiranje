@@ -16,10 +16,11 @@ namespace Projekat3.Server
 
         //referenca na LeagueActor
         private readonly IActorRef _leagueActor;
-
-        public WebServer(IActorRef leagueActor)
+        private readonly IActorRef _perActor;
+        public WebServer(IActorRef leagueActor,IActorRef perActor)
         {
             _leagueActor = leagueActor;
+            _perActor = perActor;
             _listener = new HttpListener();
             _listener.Prefixes.Add("http://localhost:5000/");
             
@@ -31,8 +32,6 @@ namespace Projekat3.Server
 
             Logger.Log("WebServer je pokrenut");
             Logger.Log("http://localhost:5000/");
-
-            
 
             while (true)
             {
@@ -61,7 +60,7 @@ namespace Projekat3.Server
                             new GetStandingsRequest(),
                             TimeSpan.FromSeconds(5));
 
-                       Logger.Log($"LeagueActor vratio {response.Standings.Count} timova.");
+                       Logger.Log($"LeagueActor vratio {response.Standings.Count} timova");
 
                         string responseText = JsonSerializer.Serialize(
                             response.Standings,
@@ -82,7 +81,38 @@ namespace Projekat3.Server
 
                         context.Response.Close();
 
-                        Logger.Log("HTTP odgovor uspesno poslat.");
+                        Logger.Log("HTTP odgovor uspesno poslat");
+                    }
+                    else if (path =="/percentage" && method=="GET")
+                    {
+                        string teamName = context.Request.QueryString["team"];
+
+                        var response = await _perActor.Ask<PercentageResponse>(
+                            new GetPercentageRequest(teamName),
+                            TimeSpan.FromSeconds(5));
+
+                        Logger.Log($"PercentageActor vratio procenat za tim {teamName}");
+
+                        string responseText = JsonSerializer.Serialize(
+                            response,
+                            new JsonSerializerOptions
+                            {
+                                WriteIndented = true
+                            });
+
+                        byte[] buffer = Encoding.UTF8.GetBytes(responseText);
+
+                        context.Response.StatusCode = 200;
+                        context.Response.ContentType = "application/json";
+                        context.Response.ContentEncoding = Encoding.UTF8;
+                        context.Response.ContentLength64 = buffer.Length;
+
+                        await context.Response.OutputStream.WriteAsync(buffer);
+
+                        context.Response.Close();
+
+                        Logger.Log("HTTP odgovor uspesno poslat");
+
                     }
                     else
                     {
